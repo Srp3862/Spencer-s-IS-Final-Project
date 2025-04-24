@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Spencer's Snake Game</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    #gameCanvas {
+      background-color: #222;
+      border: 2px solid #4CAF50;
+      display: none; /* hide until game starts */
+    }
+
+    #score {
+      font-size: 1.2rem;
+      margin-top: 10px;
+      display: none; /* hide until game starts */
+    }
+
+    /* Popup modal styles */
+    #popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    #popup-content {
+      background: #222;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 0 20px #4CAF50;
+    }
+
+    #popup-content h2 {
+      margin-top: 0;
+    }
+
+    #popup-content button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #popup-content button:hover {
+      background: #3e8e41;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Rules Popup -->
+  <div id="popup">
+    <div id="popup-content">
+      <h2>🐍 Spencer's Snake Game Rules</h2>
+      <p>Use the arrow keys to move the snake.<br>
+         Eat the red square to grow longer.<br>
+         Don't hit the walls or your own tail!<br>
+         Your score increases by 1 for each food.</p>
+      <button onclick="startGame()">Start Game</button>
+    </div>
+  </div>
+
+  <h1>🐍 Spencer's Snake Game</h1>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+  <div id="score">Score: —</div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const gridSize = 20;
+    const tileCount = canvas.width / gridSize;
+
+    let snake = [{ x: 10, y: 10 }];
+    let velocity = { x: 0, y: 0 };
+    let food = { x: 15, y: 15 };
+    let score = 0;
+    let gameStarted = false;
+    let gameLoopInterval;
+
+    function startGame() {
+      document.getElementById("popup").style.display = "none";
+      canvas.style.display = "block";
+      document.getElementById("score").style.display = "block";
+      if (gameStarted) return;
+      gameStarted = true;
+      gameLoopInterval = setInterval(gameLoop, 100);
+      drawGame(); // initial draw
+    }
+
+    function gameLoop() {
+      const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
+
+      // Prevent movement before first input
+      if (velocity.x === 0 && velocity.y === 0) return;
+
+      // Game Over Conditions
+      if (
+        head.x < 0 || head.x >= tileCount ||
+        head.y < 0 || head.y >= tileCount ||
+        snake.some(segment => segment.x === head.x && segment.y === head.y)
+      ) {
+        clearInterval(gameLoopInterval);
+        alert("Game Over! Your score: " + score);
+        document.location.reload();
+        return;
+      }
+
+      snake.unshift(head);
+
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        document.getElementById("score").textContent = "Score: " + score;
+        placeFood();
+      } else {
+        snake.pop();
+      }
+
+      drawGame();
+    }
+
+    function drawGame() {
+      ctx.fillStyle = '#222';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Snake
+      ctx.fillStyle = '#4CAF50';
+      snake.forEach(segment => {
+        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
+      });
+
+      // Draw Food
+      ctx.fillStyle = '#FF5252';
+      ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+    }
+
+    function placeFood() {
+      food = {
+        x: Math.floor(Math.random() * tileCount),
+        y: Math.floor(Math.random() * tileCount)
+      };
+      // Ensure food isn't placed on the snake
+      if (snake.some(segment => segment.x === food.x && segment.y === food.y)) {
+        placeFood();
+      }
+    }
+
+    document.addEventListener('keydown', e => {
+      if (!gameStarted) return;
+      switch (e.key) {
+        case 'ArrowUp':
+          if (velocity.y === 0) velocity = { x: 0, y: -1 };
+          break;
+        case 'ArrowDown':
+          if (velocity.y === 0) velocity = { x: 0, y: 1 };
+          break;
+        case 'ArrowLeft':
+          if (velocity.x === 0) velocity = { x: -1, y: 0 };
+          break;
+        case 'ArrowRight':
+          if (velocity.x === 0) velocity = { x: 1, y: 0 };
+          break;
+      }
+      if (!gameLoopInterval) {
+        gameLoopInterval = setInterval(gameLoop, 100);
+      }
+    });
+  </script>
+
+</body>
+</html>
